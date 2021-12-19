@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:technical_indicator/configurations/config.dart';
-import 'package:technical_indicator/models/time_instance.dart';
 
 import 'information_table.dart';
 import 'option_selector.dart';
@@ -9,11 +8,9 @@ class InformationComponent extends StatefulWidget {
   final String tag;
   final String title;
   final Map<String,String> infoRowList;
-  final List<String> tableHeaders;
-  final List tableBody;
   final List<String> options;
-  final List<TableData> tableBodyOptions;
-  const InformationComponent({Key? key, required this.tableBodyOptions, required this.options, required this.title, required this.tag, required this.infoRowList, required this.tableHeaders, required this.tableBody}) : super(key: key);
+  final dynamic tableData;
+  const InformationComponent({Key? key, required this.tableData, required this.options, required this.title, required this.tag, required this.infoRowList,}) : super(key: key);
 
   @override
   _InformationComponentState createState() => _InformationComponentState();
@@ -76,13 +73,11 @@ class _InformationComponentState extends State<InformationComponent> {
     );
   }
 
-
-
-  List getTableBody(){
+  List<Map<String,List<String>>> getTableData(){
     if(widget.options.isEmpty){
-      return widget.tableBody;
+      return widget.tableData;
     }else{
-      return widget.tableBodyOptions[selectedOption].data;
+      return widget.tableData[widget.options[selectedOption]];
     }
   }
 
@@ -106,14 +101,15 @@ class _InformationComponentState extends State<InformationComponent> {
         SizedBox(height: h*0.02,),
         widget.options.isNotEmpty?Container(
           padding: EdgeInsets.symmetric(horizontal: w*0.25),
-          child: OptionSelector(defaultValue: widget.options[0], options: widget.options, selectedOption: (val){
+          child: OptionSelector(defaultValue: widget.options[selectedOption], options: widget.options, selectedOption: (val){
             setState(() {
-              selectedOption = widget.tableBodyOptions.indexWhere((element) => element.title == val);
+              selectedOption = widget.options.indexWhere((element) => element==val);
             });
           }),
         ):Container(),
         SizedBox(height: h*0.02,),
-        Container(padding: EdgeInsets.symmetric(horizontal: w*0.03),child: InformationTable(tableHeaders: widget.tableHeaders,tableBody: getTableBody(),)),
+        // Container(padding: EdgeInsets.symmetric(horizontal: w*0.03),child: InformationTable(tableHeaders: widget.tableHeaders,tableBody: getTableBody(),)),
+        Container(padding: EdgeInsets.symmetric(horizontal: w*0.03),child: InformationTable(tableData: getTableData(),)),
         SizedBox(height: h*0.01,),
       ],
     );

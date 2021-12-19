@@ -217,7 +217,6 @@ class _TechnicalIndicatorState extends State<TechnicalIndicator> {
   // Info Component
 
   // Pivot Point Component
-
   Map pivPoint = {
     "S3": 456.87.toString(),
     "S2": 456.87.toString(),
@@ -249,43 +248,6 @@ class _TechnicalIndicatorState extends State<TechnicalIndicator> {
     return tempList;
   }
 
-  List<String> getMovingAveragesTableHeaders(){
-    if(selectedInstance.movingAverages.tableData.isNotEmpty){
-      Map<String,String> temp = selectedInstance.movingAverages.tableData[0].data[0];
-
-      List<String> headers = [];
-      temp.forEach((key, value) {
-        headers.add(key);
-      });
-      return headers;
-    }else{
-      return [];
-    }
-  }
-
-  List<String> getMovingAveragesTableOptions(){
-    if(selectedInstance.movingAverages.tableData.isNotEmpty){
-      return selectedInstance.movingAverages.tableData.map((e) => e.title).toList();
-    }else{
-      return [];
-    }
-  }
-
-  List<String> getOscillatorTableHeaders(){
-    if(selectedInstance.oscillators.tableData.isNotEmpty){
-      Map<String,String> temp = selectedInstance.oscillators.tableData[0];
-
-      List<String> headers = [];
-      temp.forEach((key, value) {
-        headers.add(key);
-      });
-      return headers;
-    }else{
-      return [];
-    }
-  }
-
-
   Widget buildPivotPointsComponent(var h, var w){
     return Column(
       children: [
@@ -306,9 +268,75 @@ class _TechnicalIndicatorState extends State<TechnicalIndicator> {
       ],
     );
   }
-
-
   // Pivot Point Component
+
+  List<String> getMovingAveragesTableOptions(){
+    if(selectedInstance.movingAverages.tableData.isNotEmpty){
+      return selectedInstance.movingAverages.tableData.map((e) => e.title).toList();
+    }else{
+      return [];
+    }
+  }
+
+  List<Map<String,List<String>>> getOscillatorTableData(){
+    List<Map<String,List<String>>> temp = [];
+
+    List<String> column1 = [];
+    List<String> column2 = [];
+    List<String> column3 = [];
+
+    selectedInstance.oscillators.tableData.forEach((element) {
+      element.forEach((key, value) {
+        if(key.compareTo('name')==0){
+          column1.add(value);
+        }else if(key.compareTo('value')==0){
+          column2.add(value);
+        }else if(key.compareTo('action')==0){
+          column3.add(value);
+        }
+      });
+    });
+
+    temp.add({"Name":column1});
+    temp.add({"Value":column2});
+    temp.add({"Action":column3});
+
+    return temp;
+  }
+
+  Map<String,List<Map<String,List<String>>>> getMovingAveragesTableData(){
+
+    Map<String,List<Map<String,List<String>>>> tempMP = {};
+
+    selectedInstance.movingAverages.tableData.forEach((element) {
+
+      List<Map<String,List<String>>> temp = [];
+
+      List<String> column1 = [];
+      List<String> column2 = [];
+      List<String> column3 = [];
+
+      element.data.forEach((e) {
+        e.forEach((key, value) {
+          if(key.compareTo('title')==0){
+            column1.add(value);
+          }else if(key.compareTo('value')==0){
+            column2.add(value);
+          }else if(key.compareTo('type')==0){
+            column3.add(value);
+          }
+        });
+      });
+
+      temp.add({"Title":column1});
+      temp.add({"Value":column2});
+      temp.add({"Type":column3});
+
+      tempMP.addAll({element.title:temp});
+    });
+
+    return tempMP;
+  }
 
   void setCurrentTimeInstance(int ind){
     selectedInstance = timeInstanceList.firstWhere((element) => element.timeInstance == timeInstances[ind]);
@@ -372,23 +400,19 @@ class _TechnicalIndicatorState extends State<TechnicalIndicator> {
                   buildSummaryContainer(h, w),
                   SizedBox(height: h*0.05,),
                   InformationComponent(
-                    tableBodyOptions: selectedInstance.movingAverages.tableData,
+                    tableData: getMovingAveragesTableData(),
                     options: getMovingAveragesTableOptions(),
                     title: selectedInstance.movingAverages.componentName,
                     tag: selectedInstance.movingAverages.data['text']??'',
                     infoRowList: selectedInstance.movingAverages.data.isNotEmpty?selectedInstance.movingAverages.data:{},
-                    tableHeaders: getMovingAveragesTableHeaders(),
-                    tableBody: const [],
                   ),
                   SizedBox(height: h*0.05,),
                   InformationComponent(
+                      tableData: getOscillatorTableData(),
                       options: const [],
-                      tableBodyOptions: const [],
                       title: selectedInstance.oscillators.componentName,
                       tag: selectedInstance.oscillators.data['text']??'',
                       infoRowList: selectedInstance.oscillators.data.isNotEmpty?selectedInstance.oscillators.data:{},
-                      tableHeaders: getOscillatorTableHeaders(),
-                      tableBody: selectedInstance.oscillators.tableData,
                   ),
                   SizedBox(height: h*0.05,),
                   buildPivotPointsComponent(h, w),
