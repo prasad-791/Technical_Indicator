@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:technical_indicator/configurations/config.dart';
+import 'package:technical_indicator/models/time_instance.dart';
 
 import 'information_table.dart';
 import 'option_selector.dart';
@@ -10,13 +11,17 @@ class InformationComponent extends StatefulWidget {
   final Map<String,String> infoRowList;
   final List<String> tableHeaders;
   final List tableBody;
-  const InformationComponent({Key? key, required this.title, required this.tag, required this.infoRowList, required this.tableHeaders, required this.tableBody}) : super(key: key);
+  final List<String> options;
+  final List<TableData> tableBodyOptions;
+  const InformationComponent({Key? key, required this.tableBodyOptions, required this.options, required this.title, required this.tag, required this.infoRowList, required this.tableHeaders, required this.tableBody}) : super(key: key);
 
   @override
   _InformationComponentState createState() => _InformationComponentState();
 }
 
 class _InformationComponentState extends State<InformationComponent> {
+
+  int selectedOption = 0;
 
   Widget buildHeader(String val){
     return Align(
@@ -37,15 +42,30 @@ class _InformationComponentState extends State<InformationComponent> {
   }
 
   List<Widget> getInfoRowList(){
+
+    if(widget.infoRowList.isEmpty){
+      return [Container()];
+    }
+
     List<Column> rowList = [];
-    widget.infoRowList.forEach((key, value) {
-      rowList.add(Column(
-        children: [
-          Text(value,style:const TextStyle(fontSize: 18,color: Colors.white),),
-          Text(key,style: const TextStyle(fontSize: 14,color: Color.fromARGB(100, 255, 255, 255)),),
-        ],
-      ));
-    });
+    rowList.add(Column(
+      children: [
+        Text(widget.infoRowList["buy"]??"-",style:const TextStyle(fontSize: 18,color: Colors.white),),
+        const Text("Buy",style: TextStyle(fontSize: 14,color: Color.fromARGB(100, 255, 255, 255)),),
+      ],
+    ));
+    rowList.add(Column(
+      children: [
+        Text(widget.infoRowList["neutral"]??"-",style:const TextStyle(fontSize: 18,color: Colors.white),),
+        const Text("Neutral",style: TextStyle(fontSize: 14,color: Color.fromARGB(100, 255, 255, 255)),),
+      ],
+    ));
+    rowList.add(Column(
+      children: [
+        Text(widget.infoRowList["sell"]??"-",style:const TextStyle(fontSize: 18,color: Colors.white),),
+        const Text("Sell",style: TextStyle(fontSize: 14,color: Color.fromARGB(100, 255, 255, 255)),),
+      ],
+    ));
     return rowList;
   }
 
@@ -55,6 +75,17 @@ class _InformationComponentState extends State<InformationComponent> {
       children: getInfoRowList(),
     );
   }
+
+
+
+  List getTableBody(){
+    if(widget.options.isEmpty){
+      return widget.tableBody;
+    }else{
+      return widget.tableBodyOptions[selectedOption].data;
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -73,14 +104,16 @@ class _InformationComponentState extends State<InformationComponent> {
           child: buildInfoRow(),
         ),
         SizedBox(height: h*0.02,),
-        Container(
+        widget.options.isNotEmpty?Container(
           padding: EdgeInsets.symmetric(horizontal: w*0.25),
-          child: OptionSelector(defaultValue: 'Exponential', options: const ['Exponential','Simple'], selectedOption: (ind){
-
+          child: OptionSelector(defaultValue: widget.options[0], options: widget.options, selectedOption: (val){
+            setState(() {
+              selectedOption = widget.tableBodyOptions.indexWhere((element) => element.title == val);
+            });
           }),
-        ),
+        ):Container(),
         SizedBox(height: h*0.02,),
-        Container(padding: EdgeInsets.symmetric(horizontal: w*0.03),child: InformationTable(tableHeaders: widget.tableHeaders,tableBody: widget.tableBody,)),
+        Container(padding: EdgeInsets.symmetric(horizontal: w*0.03),child: InformationTable(tableHeaders: widget.tableHeaders,tableBody: getTableBody(),)),
         SizedBox(height: h*0.01,),
       ],
     );

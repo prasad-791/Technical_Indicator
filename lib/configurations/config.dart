@@ -24,3 +24,15 @@ List<int> positions = [
   70,
   90,
 ];
+
+List<String> timeInstances = [
+  "1 MIN",
+  "5 MIN",
+  "15 MIN",
+  "30 MIN",
+  "1 HR",
+  "5 HR",
+  "1 DAY",
+  "1 WK",
+  "1 MON",
+];

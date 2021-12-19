@@ -7,29 +7,32 @@ class InformationTable extends StatelessWidget {
   const InformationTable({Key? key, required this.tableHeaders,required this.tableBody}) : super(key: key);
 
   List<TableRow> getTableBody(var h,var w){
-    return tableBody.map((e) => TableRow(
-        children: [
-          Container(
-              padding:EdgeInsets.symmetric(vertical: h*0.01,horizontal: w*0.05),
-              width:w,
-              child: Row(
-                children: [
-                  Expanded(
-                      child: Text(e[tableHeaders[0]],textAlign: TextAlign.start,style: const TextStyle(color: Colors.white,fontSize: 16),softWrap:true,)),
-                  Expanded(
-                      child: Align(alignment: Alignment.center,child: Text(e[tableHeaders[1]].toString(),style: const TextStyle(color: Colors.white,fontSize: 16),softWrap:true,))),
-                  Expanded(
-                      child: Align(alignment:Alignment.topRight,child: Text(e[tableHeaders[2]],textAlign: TextAlign.end,style: TextStyle(
+    if(tableHeaders.isNotEmpty){
+      return tableBody.map((e) => TableRow(
+          children: [
+            Container(
+                padding:EdgeInsets.symmetric(vertical: h*0.01,horizontal: w*0.05),
+                width:w,
+                child: Row(
+                  children: [
+                    Expanded(
+                        child: Text(e[tableHeaders[0]],textAlign: TextAlign.start,style: const TextStyle(color: Colors.white,fontSize: 16),softWrap:true,)),
+                    Expanded(
+                        child: Align(alignment: Alignment.center,child: Text(e[tableHeaders[1]].toString(),style: const TextStyle(color: Colors.white,fontSize: 16),softWrap:true,))),
+                    Expanded(
+                        child: Align(alignment:Alignment.topRight,child: Text(e[tableHeaders[2]],textAlign: TextAlign.end,style: TextStyle(
                             color: !indicatorLabels.contains(e[tableHeaders[2]]) ? const Color.fromARGB(100,255, 255, 255) : indicatorColors[indicatorLabels.indexOf(e[tableHeaders[2]])],
                             fontSize: 16
                         ),
-                        softWrap:true,
-                      ))),
-                ],
-              )
-          ),
-        ]
-    ),).toList();
+                          softWrap:true,
+                        ))),
+                  ],
+                )
+            ),
+          ]
+      ),).toList();
+    }
+    return [TableRow(children: [Container()])];
   }
 
   @override

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:technical_indicator/models/time_instance.dart';
+import 'package:technical_indicator/services/api_service.dart';
 import 'package:technical_indicator/widgets/information_component.dart';
 import 'package:technical_indicator/widgets/linear_indicator.dart';
 import 'package:technical_indicator/widgets/option_selector.dart';
+import 'package:technical_indicator/configurations/config.dart';
 
 class TechnicalIndicator extends StatefulWidget {
 
@@ -15,6 +18,27 @@ class TechnicalIndicator extends StatefulWidget {
 
 class _TechnicalIndicatorState extends State<TechnicalIndicator> {
 
+  int pivIndex = 0;
+
+  List<TimeInstance> timeInstanceList = [];
+  late TimeInstance selectedInstance = TimeInstance(
+      summaryText: '',
+      timeInstance: '',
+      movingAverages: MovingAverages(
+        componentName: '',
+        data: {},
+        tableData: [],
+      ),
+      pivotPoints: [],
+      oscillators: Oscillators(
+        componentName: '',
+        data: {},
+        tableData: [],
+      )
+  );
+
+  bool isVisible = false;
+  
   // Header for each part
   Widget buildHeader(String val){
     return Align(
@@ -27,18 +51,7 @@ class _TechnicalIndicatorState extends State<TechnicalIndicator> {
 
   Color selectedTimeInstance = Colors.white;
   Color unSelectedTimeInstance = const Color.fromARGB(100, 255, 255, 255);
-
-  List<String> timeInstances = [
-    "1 MIN",
-    "5 MIN",
-    "15 MIN",
-    "30 MIN",
-    "1 HR",
-    "5 HR",
-    "1 DAY",
-    "1 WK",
-    "1 MON",
-  ];
+  
 
   int index = 0;
   int selectedIndex = 0;
@@ -66,7 +79,8 @@ class _TechnicalIndicatorState extends State<TechnicalIndicator> {
         onTap: (){
           setState(() {
             selectedIndex = timeInstances.indexOf(e);
-            index = selectedIndex%5;
+            setCurrentTimeInstance(selectedIndex);
+            index = indicatorLabels.indexOf(selectedInstance.summaryText.toUpperCase());
           });
         },
         child: timeInstance(e, h, w,selectedIndex == timeInstances.indexOf(e)?selectedTimeInstance:unSelectedTimeInstance))).toList();
@@ -217,20 +231,58 @@ class _TechnicalIndicatorState extends State<TechnicalIndicator> {
   List<Widget> buildPivotRows(var h,var w){
     List<Widget> tempList = [];
 
-    pivPoint.forEach((key, value) {
-      tempList.add(Container(
-        padding: EdgeInsets.symmetric(horizontal: w*0.08,vertical: h*0.01),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(key,style: TextStyle(fontSize: 16,color: unSelectedTimeInstance),),
-            Text(value,style: const TextStyle(fontSize: 16,color: Colors.white),),
-          ],
-        ),
-      ));
-    });
+    if(selectedInstance.pivotPoints.isNotEmpty){
+      selectedInstance.pivotPoints[pivIndex].points.forEach((key, value) {
+        tempList.add(Container(
+          padding: EdgeInsets.symmetric(horizontal: w*0.08,vertical: h*0.01),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(key,style: TextStyle(fontSize: 16,color: unSelectedTimeInstance),),
+              Text(value,style: const TextStyle(fontSize: 16,color: Colors.white),),
+            ],
+          ),
+        ));
+      });
+    }
 
     return tempList;
+  }
+
+  List<String> getMovingAveragesTableHeaders(){
+    if(selectedInstance.movingAverages.tableData.isNotEmpty){
+      Map<String,String> temp = selectedInstance.movingAverages.tableData[0].data[0];
+
+      List<String> headers = [];
+      temp.forEach((key, value) {
+        headers.add(key);
+      });
+      return headers;
+    }else{
+      return [];
+    }
+  }
+
+  List<String> getMovingAveragesTableOptions(){
+    if(selectedInstance.movingAverages.tableData.isNotEmpty){
+      return selectedInstance.movingAverages.tableData.map((e) => e.title).toList();
+    }else{
+      return [];
+    }
+  }
+
+  List<String> getOscillatorTableHeaders(){
+    if(selectedInstance.oscillators.tableData.isNotEmpty){
+      Map<String,String> temp = selectedInstance.oscillators.tableData[0];
+
+      List<String> headers = [];
+      temp.forEach((key, value) {
+        headers.add(key);
+      });
+      return headers;
+    }else{
+      return [];
+    }
   }
 
 
@@ -241,14 +293,12 @@ class _TechnicalIndicatorState extends State<TechnicalIndicator> {
         SizedBox(height: h*0.02,),
         Container(
           padding: EdgeInsets.symmetric(horizontal: w*0.25),
-          child: OptionSelector(defaultValue: "Classic", options: const[
-            "Classic",
-            "Fibonacci",
-            "Camarilla",
-            "Woodie's",
-            "DeMark's",
+          child: OptionSelector(defaultValue: selectedInstance.pivotPoints.isNotEmpty?selectedInstance.pivotPoints[pivIndex].title:"", options: [
+            ...selectedInstance.pivotPoints.map((e) => e.title).toList(),
           ], selectedOption: (val){
-
+              setState(() {
+                pivIndex = selectedInstance.pivotPoints.indexWhere((element) => element.title == val);
+              });
           }),
         ),
         SizedBox(height: h*0.02,),
@@ -260,6 +310,31 @@ class _TechnicalIndicatorState extends State<TechnicalIndicator> {
 
   // Pivot Point Component
 
+  void setCurrentTimeInstance(int ind){
+    selectedInstance = timeInstanceList.firstWhere((element) => element.timeInstance == timeInstances[ind]);
+  }
+
+  void fetchData()async{
+
+    setState(() {
+      isVisible = false;
+    });
+
+    List<TimeInstance> temp = await ApiService().getData();
+    setState(() {
+      timeInstanceList = temp;
+      setCurrentTimeInstance(selectedIndex);
+      isVisible = true;
+    });
+
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    fetchData();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -282,24 +357,48 @@ class _TechnicalIndicatorState extends State<TechnicalIndicator> {
         automaticallyImplyLeading: false,
       ),
       resizeToAvoidBottomInset: false,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(height: h*0.01,),
-            Container(margin: EdgeInsets.symmetric(horizontal: w*0.05),child: OptionSelector(defaultValue: "Technical Indicators",options: const [],selectedOption: (val){
-              print(val);
-            },)),
-            SizedBox(height: h*0.05,),
-            buildSummaryContainer(h, w),
-            SizedBox(height: h*0.05,),
-            InformationComponent(title: "Moving Averages",tag: "Buy",infoRowList: infoRowList,tableHeaders: tableHeaders,tableBody: tableBody,),
-            SizedBox(height: h*0.05,),
-            InformationComponent(title: "Oscillators", tag: "Strong Sell", infoRowList: infoRowList, tableHeaders: tableHeaders2, tableBody: tableBody2),
-            SizedBox(height: h*0.05,),
-            buildPivotPointsComponent(h, w),
-            SizedBox(height: h*0.05,),
-          ],
-        ),
+      body: Stack(
+        children: [
+          Visibility(
+            visible: isVisible,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  SizedBox(height: h*0.01,),
+                  Container(margin: EdgeInsets.symmetric(horizontal: w*0.05),child: OptionSelector(defaultValue: "Technical Indicators",options: const [],selectedOption: (val){
+
+                  },)),
+                  SizedBox(height: h*0.05,),
+                  buildSummaryContainer(h, w),
+                  SizedBox(height: h*0.05,),
+                  InformationComponent(
+                    tableBodyOptions: selectedInstance.movingAverages.tableData,
+                    options: getMovingAveragesTableOptions(),
+                    title: selectedInstance.movingAverages.componentName,
+                    tag: selectedInstance.movingAverages.data['text']??'',
+                    infoRowList: selectedInstance.movingAverages.data.isNotEmpty?selectedInstance.movingAverages.data:{},
+                    tableHeaders: getMovingAveragesTableHeaders(),
+                    tableBody: const [],
+                  ),
+                  SizedBox(height: h*0.05,),
+                  InformationComponent(
+                      options: const [],
+                      tableBodyOptions: const [],
+                      title: selectedInstance.oscillators.componentName,
+                      tag: selectedInstance.oscillators.data['text']??'',
+                      infoRowList: selectedInstance.oscillators.data.isNotEmpty?selectedInstance.oscillators.data:{},
+                      tableHeaders: getOscillatorTableHeaders(),
+                      tableBody: selectedInstance.oscillators.tableData,
+                  ),
+                  SizedBox(height: h*0.05,),
+                  buildPivotPointsComponent(h, w),
+                  SizedBox(height: h*0.05,),
+                ],
+              ),
+            ),
+          ),
+          Visibility(visible: !isVisible,child: const Center(child: CircularProgressIndicator(color: Colors.white,))),
+        ],
       )
     );
   }
